@@ -15,28 +15,23 @@ const ConnectionTest = () => {
         setStatus('testing');
 
         try {
-            // Test the API endpoint - 401 is a valid response indicating server is working
-            const response = await fetch('http://localhost:8000/api/users/', {
+            // Test a simple endpoint that should always respond
+            const response = await fetch(`${backendUrl}/api/users/`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                 },
             });
 
-            // 401 means unauthorized but server is responding correctly
-            // 200 means we got a valid response
-            // 403 means forbidden but server is working
+            // Any response (including 401/403) means the server is working
             if (response.status === 401 || response.status === 200 || response.status === 403) {
-                console.log('✅ Backend connection successful - Status:', response.status);
                 setStatus('connected');
                 return;
             }
 
-            console.log('⚠️ Unexpected status code:', response.status);
             setStatus('failed');
 
         } catch (error) {
-            console.error('❌ Connection test failed:', error);
             setStatus('failed');
         }
     };

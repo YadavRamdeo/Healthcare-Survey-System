@@ -30,19 +30,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        // Only redirect on 401 if user was previously authenticated
+        // Handle authentication errors
         if (error.response?.status === 401) {
             const token = localStorage.getItem('token');
             if (token) {
-                // User had a token but it's invalid/expired
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
+                clearStorage();
                 if (!window.location.pathname.includes('/login')) {
                     toast.error('Session expired. Please login again.');
                     window.location.href = '/login';
                 }
             }
-            // If no token, 401 is expected for protected routes
             return Promise.reject(error);
         }
 
@@ -66,13 +63,16 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        // Show specific error message if available (but not for login page)
-        if (!window.location.pathname.includes('/login')) {
+        // Show error messages for non-auth pages
+        if (!window.location.pathname.includes('/login') && 
+            !window.location.pathname.includes('/register')) {
             const message = error.response?.data?.detail ||
                 error.response?.data?.message ||
                 error.response?.data?.error ||
                 'An error occurred';
-            toast.error(message);
+            if (message !== 'An error occurred') {
+                toast.error(message);
+            }
         }
 
         return Promise.reject(error);
@@ -100,7 +100,7 @@ export const testConnection = async () => {
 
 // Auth API
 export const authAPI = {
-    login: (credentials) => api.post('/users/login/', credentials),
+    login: (credentials) => api.post('/auth/login/', credentials),
     register: (userData) => api.post('/users/register/', userData),
     logout: () => api.post('/users/logout/'),
     profile: () => api.get('/users/profile/'),

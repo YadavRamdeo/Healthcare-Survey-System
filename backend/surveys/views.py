@@ -31,16 +31,16 @@ class SurveyListCreateView(generics.ListCreateAPIView):
             
             # Filter based on user role
             if user.role == 'patient':
-                # CHANGE: Use icontains instead of contains
+                # Filter surveys available to patients
                 queryset = queryset.filter(
                     Q(status='active') & 
-                    (Q(invitations__recipient=user) | Q(target_roles__icontains='patient'))
+                    (Q(invitations__recipient=user) | Q(target_roles__contains=['patient']))
                 ).distinct()
             elif user.role in ['healthcare_provider', 'researcher']:
-                # CHANGE: Use icontains instead of contains
+                # Filter surveys for healthcare providers and researchers
                 queryset = queryset.filter(
                     Q(created_by=user) | 
-                    Q(target_roles__icontains=user.role) |
+                    Q(target_roles__contains=[user.role]) |
                     Q(status='active')
                 ).distinct()
             # Admins can see all surveys
@@ -350,7 +350,7 @@ def duplicate_survey(request, survey_id):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def dashboard_stats(request):
-    """Get dashboard statistics - FIXED VERSION"""
+    """Get dashboard statistics"""
     user = request.user
     
     try:
@@ -369,11 +369,10 @@ def dashboard_stats(request):
                 'my_responses': SurveyResponse.objects.filter(respondent=user).count(),
             }
         else:  # patient
-            # CHANGE THIS LINE - use icontains instead of contains
             stats = {
                 'available_surveys': Survey.objects.filter(
                     status='active',
-                    target_roles__icontains='patient'  # Changed from __contains to __icontains
+                    target_roles__contains=['patient']
                 ).count(),
                 'my_responses': SurveyResponse.objects.filter(respondent=user).count(),
                 'completed_surveys': SurveyResponse.objects.filter(
@@ -385,7 +384,7 @@ def dashboard_stats(request):
         return Response(stats)
     
     except Exception as e:
-        print(f"Dashboard stats error: {str(e)}")
+        # Return empty stats on error instead of crashing
         return Response({
             'total_surveys': 0,
             'active_surveys': 0,

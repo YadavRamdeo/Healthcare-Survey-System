@@ -2,7 +2,7 @@ from rest_framework import generics, status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
-from django.contrib.auth import login
+from django.contrib.auth import authenticate
 from django.db.models import Q
 from .models import User
 from .serializers import (
@@ -74,16 +74,35 @@ def register(request):
 @permission_classes([permissions.AllowAny])
 def login_view(request):
     """Login user and return token"""
-    serializer = LoginSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.validated_data['user']
-        login(request, user)
+    username_or_email = request.data.get('username') or request.data.get('email')
+    password = request.data.get('password')
+    
+    if not username_or_email or not password:
+        return Response({'error': 'Username/email and password are required'}, 
+                       status=status.HTTP_400_BAD_REQUEST)
+    
+    # Try to authenticate with username first, then email
+    user = None
+    if '@' in username_or_email:
+        # It's an email
+        try:
+            user_obj = User.objects.get(email=username_or_email)
+            user = authenticate(username=user_obj.username, password=password)
+        except User.DoesNotExist:
+            pass
+    else:
+        # It's a username
+        user = authenticate(username=username_or_email, password=password)
+    
+    if user and user.is_active:
         token, created = Token.objects.get_or_create(user=user)
         return Response({
             'user': UserProfileSerializer(user).data,
             'token': token.key
         })
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response({'error': 'Invalid credentials'}, 
+                       status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])

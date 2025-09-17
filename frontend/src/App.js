@@ -19,7 +19,7 @@ import ConnectionTest from './components/ConnectionTest/ConnectionTest';
 // Services
 import { getStoredUser, setAuthToken, clearStorage } from './services/api';
 
-// Context for authentication
+// Authentication Context
 const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -47,6 +47,7 @@ const AuthProvider = ({ children }) => {
     }, []);
 
     const login = (userData, token) => {
+        localStorage.setItem('token', token);
         setAuthToken(token);
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));

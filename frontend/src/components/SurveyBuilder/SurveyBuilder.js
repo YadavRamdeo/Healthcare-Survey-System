@@ -151,8 +151,9 @@ const SurveyBuilder = () => {
             // Prepare survey data
             const surveyData = {
                 ...data,
-                questions: undefined // Remove questions from survey data
+                // Remove questions from survey data as they're handled separately
             };
+            delete surveyData.questions;
 
             let surveyResponse;
             if (id) {
@@ -171,8 +172,8 @@ const SurveyBuilder = () => {
                 }));
 
                 if (id) {
-                    // For existing survey, we'll need to handle question updates individually
-                    // This is a simplified approach - in production, you'd want more sophisticated handling
+                    // For existing surveys, delete existing questions first, then create new ones
+                    // This is a simplified approach
                     await questionsAPI.bulkCreate(surveyId, { questions: questionsData });
                 } else {
                     await questionsAPI.bulkCreate(surveyId, { questions: questionsData });

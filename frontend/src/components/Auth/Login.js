@@ -22,16 +22,11 @@ const Login = () => {
     const onSubmit = async (data) => {
         setLoading(true);
         try {
-            // Check if the input is an email or username
-            const isEmail = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(data.usernameOrEmail);
-
-            // Create the proper payload based on input type
+            // Send the data as-is, backend will handle email vs username
             const loginData = {
+                username: data.usernameOrEmail, // Backend expects 'username' field
                 password: data.password,
-                ...(isEmail ? { email: data.usernameOrEmail } : { username: data.usernameOrEmail })
             };
-
-            console.log('Sending login data:', loginData); // Debug log
 
             const response = await authAPI.login(loginData);
             const { user, token } = response.data;
@@ -40,9 +35,8 @@ const Login = () => {
             toast.success(`Welcome back, ${user.first_name || user.username}!`);
             navigate('/dashboard');
         } catch (error) {
-            console.error('Login error:', error.response?.data); // Debug log
             toast.error(
-                error.response?.data?.non_field_errors?.[0] ||
+                error.response?.data?.error ||
                 error.response?.data?.detail ||
                 error.response?.data?.message ||
                 'Login failed. Please check your credentials.'
